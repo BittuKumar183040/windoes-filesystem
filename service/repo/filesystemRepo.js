@@ -1,13 +1,33 @@
 import db from "../../utility/db/knex/knex.js";
-
 const TABLE_NAME = 'filesystem';
 
-export const getFileSystemRoots = async () => {
-  return db(TABLE_NAME).whereNull('parentId').select('*');
+export const getFileSystemRoots = async (userId) => {
+  return db(TABLE_NAME).where({userId, parentId: null}).select('*');
 };
 
-export const getFolderContents = async (parentId) => {
-  return db(TABLE_NAME).where({ parentId }).select('*');
+export const getFolderContents = async (parentId, userId) => {
+  return db(TABLE_NAME).where({ parentId, userId }).select('*');
+};
+
+export const getFullFileSystem = async (userId) => {
+  const allItems = await db(TABLE_NAME).where({ userId }).select('*');
+
+  const itemMap = new Map();
+  allItems.forEach(item => itemMap.set(item.id, { ...item, children: [] }));
+
+  const rootItems = [];
+  allItems.forEach(item => {
+    if (item.parentId === null || item.parentId === '') {
+      rootItems.push(itemMap.get(item.id));
+    } else {
+      const parent = itemMap.get(item.parentId);
+      if (parent) {
+        parent.children.push(itemMap.get(item.id));
+      }
+    }
+  });
+
+  return rootItems;
 };
 
 export const createFolder = async ({ parentId, name, userId }) => {
@@ -44,18 +64,17 @@ export const createFile = async ({ parentId, name, userId, size }) => {
   return newFile;
 };
 
-export const renameFileSystemItem = async (id, newName) => {
+export const renameFileSystemItem = async (id, newName, userId) => {
   const [updatedItem] = await db(TABLE_NAME)
-    .where({ id })
+    .where({ id, userId })
     .update({ name: newName, updatedAt: Math.floor(Date.now() / 1000) })
     .returning('*');
   return updatedItem;
 };
 
-export const deleteFileSystemItem = async (id) => {
-  return db(TABLE_NAME).where({ id }).del();
+export const deleteFileSystemItem = async (id, userId) => {
+  return db(TABLE_NAME).where({ id, userId }).del();
 };
-
 
 export const insertRecord = async ({ userId, fileTag, filename }) => {
   const [file] = await db("filesystem")
@@ -84,4 +103,4 @@ export const getFilebyFileAndUserId = async ({fileId, userId}) => {
     .where({ id: fileId, userId:userId })
     .select("*")
     .first();
-}
+};

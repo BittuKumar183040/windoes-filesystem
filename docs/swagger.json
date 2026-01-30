@@ -13,32 +13,6 @@
       }
     },
     "schemas": {
-      "User": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "username": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "integer"
-          },
-          "updatedAt": {
-            "type": "integer"
-          }
-        }
-      },
       "Error": {
         "type": "object",
         "properties": {
@@ -47,43 +21,25 @@
           }
         }
       },
-      "FileTag": {
-        "type": "string",
-        "description": "Type of user file",
-        "enum": [
-          "profile-picture",
-          "wallpaper"
-        ],
-        "example": "profile-picture"
-      },
-      "FileStatus": {
-        "type": "string",
-        "enum": [
-          "ACTIVE",
-          "INACTIVE"
-        ],
-        "example": "ACTIVE"
-      },
-      "File": {
+      "FileSystemItem": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "example": "8f2b9e4e-8a45-4c63-9e44-acde12345678"
+            "example": "dir-123"
           },
-          "userId": {
+          "name": {
             "type": "string",
-            "example": "admin"
+            "example": "MyFolder"
           },
-          "fileTag": {
-            "$ref": "#/components/schemas/FileTag"
-          },
-          "filename": {
+          "parentId": {
             "type": "string",
-            "example": "profile_pic.png"
+            "example": "root"
           },
-          "status": {
-            "$ref": "#/components/schemas/FileStatus"
+          "type": {
+            "type": "string",
+            "enum": ["folder", "file"],
+            "example": "folder"
           },
           "createdAt": {
             "type": "integer",
@@ -94,36 +50,205 @@
             "example": 1767060500
           }
         }
+      },
+      "Folder": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FileSystemItem"
+          },
+          {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["folder"]
+              }
+            }
+          }
+        ]
+      },
+      "FileItem": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FileSystemItem"
+          },
+          {
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["file"]
+              },
+              "size": {
+                "type": "integer",
+                "example": 1024
+              }
+            }
+          }
+        ]
       }
     }
   },
   "paths": {
-    "/users": {
+    "/filesystem": {
       "get": {
-        "summary": "Get all users",
-        "tags": [
-          "Users"
+        "summary": "Get root folders (C:, D:)",
+        "tags": ["File System"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID for authorization and ownership"
+          }
         ],
         "responses": {
           "200": {
-            "description": "List of users",
+            "description": "List of root folders",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/User"
+                    "$ref": "#/components/schemas/Folder"
                   }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
           }
         }
-      },
+      }
+    },
+    "/filesystem/{parentId}": {
+      "get": {
+        "summary": "Get contents of a specific folder",
+        "tags": ["File System"],
+        "parameters": [
+          {
+            "name": "parentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID of the parent folder"
+          },
+          {
+            "name": "userId",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID for authorization and ownership"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contents of the folder",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FileSystemItem"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Folder not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/filesystem/all": {
+      "get": {
+        "summary": "Get entire file system for a user",
+        "tags": ["File System"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID for authorization and ownership"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full file system tree",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FileSystemItem"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/filesystem/folder": {
       "post": {
-        "summary": "Create a new user",
-        "tags": [
-          "Users"
+        "summary": "Create a new folder",
+        "tags": ["File System"],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID for authorization and ownership"
+          }
         ],
         "requestBody": {
           "required": true,
@@ -131,28 +256,15 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "username",
-                  "name",
-                  "email",
-                  "password"
-                ],
+                "required": ["parentId", "name"],
                 "properties": {
-                  "username": {
+                  "parentId": {
                     "type": "string",
-                    "example": "red"
+                    "example": "root"
                   },
                   "name": {
                     "type": "string",
-                    "example": "Bittu Kumar"
-                  },
-                  "email": {
-                    "type": "string",
-                    "example": "red@example.com"
-                  },
-                  "password": {
-                    "type": "string",
-                    "example": "SecurePass123!"
+                    "example": "New Folder"
                   }
                 }
               }
@@ -161,17 +273,17 @@
         },
         "responses": {
           "201": {
-            "description": "User created successfully",
+            "description": "Folder created successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/Folder"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request",
+            "description": "Bad request (e.g., missing parameters)",
             "content": {
               "application/json": {
                 "schema": {
@@ -180,8 +292,8 @@
               }
             }
           },
-          "409": {
-            "description": "User already exists",
+          "500": {
+            "description": "Server error",
             "content": {
               "application/json": {
                 "schema": {
@@ -193,118 +305,59 @@
         }
       }
     },
-    "/users/keyword/{keyword}": {
-      "get": {
-        "summary": "Get user information by Id, username or Email.",
-        "tags": [
-          "Users"
-        ],
+    "/filesystem/file": {
+      "post": {
+        "summary": "Create a new file",
+        "tags": ["File System"],
         "parameters": [
           {
-            "name": "keyword",
-            "in": "path",
+            "name": "userId",
+            "in": "header",
             "required": true,
             "schema": {
               "type": "string"
             },
-            "example": "red"
+            "description": "User ID for authorization and ownership"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["parentId", "name", "size"],
+                "properties": {
+                  "parentId": {
+                    "type": "string",
+                    "example": "folder-123"
+                  },
+                  "name": {
+                    "type": "string",
+                    "example": "document.txt"
+                  },
+                  "size": {
+                    "type": "integer",
+                    "example": 1024
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
-          "200": {
-            "description": "User found",
+          "201": {
+            "description": "File created successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "User not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/username/{username}/check": {
-      "get": {
-        "summary": "Check username already exists on not",
-        "tags": [
-          "Users"
-        ],
-        "parameters": [
-          {
-            "name": "username",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "example": "red"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "User found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "User not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/id/{id}": {
-      "get": {
-        "summary": "Get user by ID",
-        "tags": [
-          "Users"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "example": 1
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "User found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/FileItem"
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid ID",
+            "description": "Bad request (e.g., missing parameters)",
             "content": {
               "application/json": {
                 "schema": {
@@ -313,8 +366,8 @@
               }
             }
           },
-          "404": {
-            "description": "User not found",
+          "500": {
+            "description": "Server error",
             "content": {
               "application/json": {
                 "schema": {
@@ -326,12 +379,10 @@
         }
       }
     },
-    "/users/id/{id}/update-username": {
+    "/filesystem/{id}/rename": {
       "put": {
-        "summary": "Update username using Id",
-        "tags": [
-          "Users"
-        ],
+        "summary": "Rename a file or folder",
+        "tags": ["File System"],
         "parameters": [
           {
             "name": "id",
@@ -340,7 +391,16 @@
             "schema": {
               "type": "string"
             },
-            "example": 1
+            "description": "ID of the file or folder to rename"
+          },
+          {
+            "name": "userId",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID for authorization and ownership"
           }
         ],
         "requestBody": {
@@ -349,13 +409,11 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "username"
-                ],
+                "required": ["newName"],
                 "properties": {
-                  "username": {
+                  "newName": {
                     "type": "string",
-                    "example": "red"
+                    "example": "Renamed Item"
                   }
                 }
               }
@@ -364,17 +422,17 @@
         },
         "responses": {
           "200": {
-            "description": "User found",
+            "description": "Item renamed successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/User"
+                  "$ref": "#/components/schemas/FileSystemItem"
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid ID",
+            "description": "Bad request (e.g., missing newName)",
             "content": {
               "application/json": {
                 "schema": {
@@ -384,182 +442,7 @@
             }
           },
           "404": {
-            "description": "User not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/id/{id}/file/upload": {
-      "post": {
-        "summary": "Upload user file (profile picture or wallpaper)",
-        "tags": [
-          "Files"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "example": "2cc048d9-4671-4912-9277-4120f3465c0a"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "file",
-                  "fileTag"
-                ],
-                "properties": {
-                  "file": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Image file to upload"
-                  },
-                  "fileTag": {
-                    "$ref": "#/components/schemas/FileTag"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "202": {
-            "description": "File uploaded successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/File"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Missing file or fileTag",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Invalid fileTag",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "User not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Upload failed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/id/{id}/file/{fileTag}": {
-      "get": {
-        "summary": "Get user files by tag and status",
-        "tags": [
-          "Files"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "example": "admin"
-          },
-          {
-            "name": "fileTag",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/FileTag"
-            }
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/FileStatus"
-              }
-            },
-            "style": "form",
-            "explode": true,
-            "description": "Filter by file status (can be repeated)",
-            "example": [
-              "ACTIVE",
-              "INACTIVE"
-            ]
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Files fetched successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/File"
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Missing status query parameter",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Invalid fileTag or status value",
+            "description": "Item not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -581,12 +464,10 @@
         }
       }
     },
-    "/users/id/{id}/file/{fileTag}/download": {
-      "get": {
-        "summary": "Download user file by tag (defaults to ACTIVE if status is invalid or missing)",
-        "tags": [
-          "Files"
-        ],
+    "/filesystem/{id}": {
+      "delete": {
+        "summary": "Delete a file or folder",
+        "tags": ["File System"],
         "parameters": [
           {
             "name": "id",
@@ -595,63 +476,24 @@
             "schema": {
               "type": "string"
             },
-            "example": "admin"
+            "description": "ID of the file or folder to delete"
           },
           {
-            "name": "fileTag",
-            "in": "path",
+            "name": "userId",
+            "in": "header",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/FileTag"
+              "type": "string"
             },
-            "description": "Type of file to download"
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": [
-                  "ACTIVE",
-                  "INACTIVE"
-                ]
-              }
-            },
-            "style": "form",
-            "explode": true,
-            "description": "Optional file status filter. If omitted or invalid, defaults to ACTIVE.",
-            "example": [
-              "ACTIVE"
-            ]
+            "description": "User ID for authorization and ownership"
           }
         ],
         "responses": {
-          "200": {
-            "description": "File retrieved successfully",
-            "content": {
-              "image/*": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
+          "204": {
+            "description": "Item deleted successfully"
           },
           "404": {
-            "description": "Requested file not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Invalid fileTag or status value",
+            "description": "Item not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -662,372 +504,6 @@
           },
           "500": {
             "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/users/id/{id}/file/fileId/{fileId}/download": {
-      "get": {
-        "summary": "Download File using file Id and User Id",
-        "tags": [
-          "Files"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "example": "admin"
-          },
-          {
-            "name": "fileId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "example": "admin",
-            "description": "File Id which can be retrived by list file api"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "File retrieved successfully",
-            "content": {
-              "image/*": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Requested file not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Invalid fileTag or status value",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/login": {
-      "post": {
-        "summary": "Authenticate user using username/email and password",
-        "tags": [
-          "Auth"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "usernameOrEmail",
-                  "password"
-                ],
-                "properties": {
-                  "usernameOrEmail": {
-                    "type": "string",
-                    "example": "red"
-                  },
-                  "password": {
-                    "type": "string",
-                    "example": "SecurePass123!"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Login successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "user": {
-                      "$ref": "#/components/schemas/User"
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Login successful"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Username/email and password are required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/login/pin": {
-      "post": {
-        "summary": "Authenticate user using username/email and PIN",
-        "tags": [
-          "Auth"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "usernameOrEmail",
-                  "pin"
-                ],
-                "properties": {
-                  "usernameOrEmail": {
-                    "type": "string",
-                    "example": "red"
-                  },
-                  "pin": {
-                    "type": "string",
-                    "example": "1234"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Login successful",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "user": {
-                      "$ref": "#/components/schemas/User"
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Login successful"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Username/email and pin are required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Invalid PIN",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "summary": "Update user PIN using PIN update token",
-        "tags": [
-          "Auth"
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "pin"
-                ],
-                "properties": {
-                  "pin": {
-                    "type": "string",
-                    "example": "1234"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "PIN updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "PIN updated successfully"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "PIN update token missing or invalid",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Invalid token scope",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/login/id/{id}/password/verify": {
-      "post": {
-        "summary": "Verify password and issue short-lived PIN update token",
-        "tags": [
-          "Auth"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "ea91a18a-3370-44c2-a0b7-81478119261c"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "password"
-                ],
-                "properties": {
-                  "password": {
-                    "type": "string",
-                    "example": "SecurePass123!"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "PIN update token issued",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "pinUpdateToken": {
-                      "type": "string",
-                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    },
-                    "expiresIn": {
-                      "type": "number",
-                      "example": 300
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Password is required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Incorrect password",
             "content": {
               "application/json": {
                 "schema": {
