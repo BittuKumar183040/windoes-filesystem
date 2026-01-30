@@ -1,17 +1,75 @@
 import express from 'express';
+import * as fileSystemRepo from '../service/repo/filesystemRepo.js';
+import * as errorCheckService from '../service/errorCheckService.js';
 
 const router = express.Router();
 
-router.get("/", async (req, res, next) => {
-  logger.info("Getting overall file system index of users");
-  try{
-    res.status(200).json({"abc":"Def"});
+// Get root folders (C:, D:)
+router.get('/', async (req, res, next) => {
+  try {
+    const roots = await fileSystemRepo.getFileSystemRoots();
+    res.json(roots);
   } catch (err) {
-    logger.error(`Error: ${err} `)
-    if (err.status) {
-      return res.status(err.status).json({ error: err.error });
-    }
-    return res.status(500).json({ err: "Something went wrong! While getting users list." });
+    next(err);
+  }
+});
+
+// Get contents of a specific folder
+router.get('/:parentId', async (req, res, next) => {
+  try {
+    const { parentId } = req.params;
+    const contents = await fileSystemRepo.getFolderContents(parentId);
+    res.json(contents);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Create a new folder
+router.post('/folder', async (req, res, next) => {
+  try {
+    const { parentId, name, userId } = req.body;
+    errorCheckService.checkParameters({ parentId, name, userId });
+    const newFolder = await fileSystemRepo.createFolder({ parentId, name, userId });
+    res.status(201).json(newFolder);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Create a new file
+router.post('/file', async (req, res, next) => {
+  try {
+    const { parentId, name, userId, size } = req.body;
+    errorCheckService.checkParameters({ parentId, name, userId, size });
+    const newFile = await fileSystemRepo.createFile({ parentId, name, userId, size });
+    res.status(201).json(newFile);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Rename a file or folder
+router.put('/:id/rename', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { newName } = req.body;
+    errorCheckService.checkParameters({ newName });
+    const updatedItem = await fileSystemRepo.renameFileSystemItem(id, newName);
+    res.json(updatedItem);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Delete a file or folder
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await fileSystemRepo.deleteFileSystemItem(id);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
   }
 });
 

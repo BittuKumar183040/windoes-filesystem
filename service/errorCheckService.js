@@ -1,5 +1,13 @@
 import logger from "#logger";
 
+export const checkParameters = (params) => {
+  for (const key in params) {
+    if (params[key] === undefined || params[key] === null) {
+      throw { status: 400, error: `Missing parameter: ${key}` };
+    }
+  }
+};
+
 export const userNotFound = (status=404, msg=`User not registered.`) => {
   logger.error("User not found or not even registered")
   throw { status, error: msg };

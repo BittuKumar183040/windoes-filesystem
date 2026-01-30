@@ -6,7 +6,7 @@ import 'express-async-errors';
 import logger  from '#logger';
 import cookieParser from 'cookie-parser';
 import indexRouter from './routes/index.js';
-import filesystemRouter from './routes/filesystem.js';;
+import filesystemRouter from './routes/filesystem.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from './docs/swagger.json' with { type: 'json' };
 
