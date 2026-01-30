@@ -60,6 +60,6 @@ function onListening() {
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr
     : 'port ' + addr.port;
-  logger.info(`API Docs: ${process.env.BASE_URL}/identity-service/docs`);
+  logger.info(`API Docs: ${process.env.BASE_URL}/filesystem-service/docs`);
   logger.info('Listening on ' + bind);
 }

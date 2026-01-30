@@ -49,7 +49,7 @@ ROOT_FOLDER=/data
 
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=identity
+DB_NAME=filesystem
 DB_USER=postgres
 DB_PASSWORD=123
 

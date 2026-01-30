@@ -22,14 +22,14 @@ const swaggerSpec = {
 
 let app = express();
 app.use(cors());
-app.use('/identity-service/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/filesystem-service/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(mlogger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-app.use('/identity-service/health', indexRouter);
+app.use('/filesystem-service/health', indexRouter);
 app.use('/filesystem', filesystemRouter);
 
 app.use(function(err, req, res, next) {
