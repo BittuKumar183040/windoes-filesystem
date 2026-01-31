@@ -15,11 +15,10 @@ export const getFullFileSystem = async (userId) => {
   }
   const rows = await db(TABLE_NAME).where({ userId, status: "ACTIVE" })
     .orderBy("type", "desc");
-    
+
   console.log("Fetched rows:", rows.length);
   return rows;
 };
-
 
 export const createFolder = async ({ parentId, name, userId }) => {
   const [newFolder] = await db(TABLE_NAME)
@@ -30,7 +29,7 @@ export const createFolder = async ({ parentId, name, userId }) => {
       type: 'FOLDER',
       size: null,
       status: 'ACTIVE',
-      icon: 0,
+      icon: "folder",
       createdAt: Math.floor(Date.now() / 1000),
       updatedAt: Math.floor(Date.now() / 1000),
     })
@@ -39,6 +38,7 @@ export const createFolder = async ({ parentId, name, userId }) => {
 };
 
 export const createFile = async ({ parentId, name, userId, size }) => {
+  const extension = name.includes('.') ? name.split('.').pop() : "";
   const [newFile] = await db(TABLE_NAME)
     .insert({
       parentId,
@@ -47,7 +47,7 @@ export const createFile = async ({ parentId, name, userId, size }) => {
       type: 'FILE',
       size,
       status: 'ACTIVE',
-      icon: 0,
+      icon: extension,
       createdAt: Math.floor(Date.now() / 1000),
       updatedAt: Math.floor(Date.now() / 1000),
     })

@@ -12,7 +12,7 @@ exports.up = function (knex) {
       table.enu('type', ['FILE', 'FOLDER']).notNullable();
       table.bigInteger('size').nullable();
       table.string('status', 50).notNullable().defaultTo('ACTIVE');
-      table.integer('icon').notNullable().defaultTo(0);
+      table.string('icon').notNullable().defaultTo("document-blank");
       table.integer('createdAt').notNullable().defaultTo(knex.raw("EXTRACT(EPOCH FROM NOW())::INTEGER"));
       table.integer('updatedAt').notNullable().defaultTo(knex.raw("EXTRACT(EPOCH FROM NOW())::INTEGER"));
 
@@ -28,7 +28,7 @@ exports.up = function (knex) {
           type: 'FOLDER',
           size: 244322607104,
           status: 'ACTIVE',
-          icon: 0,
+          icon: "drive-harddisk",
           createdAt: Math.floor(Date.now() / 1000),
           updatedAt: Math.floor(Date.now() / 1000)
         },
@@ -40,7 +40,7 @@ exports.up = function (knex) {
           type: 'FOLDER',
           size: 24428466176,
           status: 'ACTIVE',
-          icon: 0,
+          icon: "folder",
           createdAt: Math.floor(Date.now() / 1000),
           updatedAt: Math.floor(Date.now() / 1000)
         },
@@ -52,7 +52,7 @@ exports.up = function (knex) {
           type: 'FOLDER',
           size: 14322607104,
           status: 'ACTIVE',
-          icon: 0,
+          icon: "drive-harddisk",
           createdAt: Math.floor(Date.now() / 1000),
           updatedAt: Math.floor(Date.now() / 1000)
         }
