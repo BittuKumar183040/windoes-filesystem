@@ -472,6 +472,25 @@
           }
         }
       }
+    },
+    "/filesystem/assets/icons": {
+      "get": {
+        "summary": "Download zip file containing filesystem icons (files & folders)",
+        "tags": ["File System Asset"],
+        "responses": {
+          "200": {
+            "description": "ZIP file containing filesystem icons",
+            "content": {
+              "application/zip:": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

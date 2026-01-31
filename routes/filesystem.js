@@ -1,4 +1,5 @@
 import express from "express";
+import path from 'path';
 import * as fileSystemRepo from "../service/repo/filesystemRepo.js";
 import * as errorCheckService from "../service/errorCheckService.js";
 const router = express.Router();
@@ -103,6 +104,21 @@ router.delete("/:id", async (req, res, next) => {
     await fileSystemRepo.deleteFileSystemItem(id, userId);
 
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/assets/icons", async (req, res, next) => {
+  try {
+    const zipPath = path.resolve("assets/filesystem.zip");
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="filesystem-icons.zip"'
+    );
+    res.setHeader( "Cache-Control", "public, max-age=31536000, immutable" );
+    res.sendFile(zipPath);
   } catch (err) {
     next(err);
   }
