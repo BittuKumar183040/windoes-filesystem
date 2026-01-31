@@ -10,25 +10,18 @@ export const getFolderContents = async (parentId, userId) => {
 };
 
 export const getFullFileSystem = async (userId) => {
-  const allItems = await db(TABLE_NAME).where({ userId }).select('*');
+  if (!userId) {
+    throw new Error("userId is required");
+  }
 
-  const itemMap = new Map();
-  allItems.forEach(item => itemMap.set(item.id, { ...item, children: [] }));
+  const rows = await db(TABLE_NAME).where({ userId, status: "ACTIVE" })
+    .orderBy("type", "desc");
 
-  const rootItems = [];
-  allItems.forEach(item => {
-    if (item.parentId === null || item.parentId === '') {
-      rootItems.push(itemMap.get(item.id));
-    } else {
-      const parent = itemMap.get(item.parentId);
-      if (parent) {
-        parent.children.push(itemMap.get(item.id));
-      }
-    }
-  });
+  console.log("Fetched rows:", rows.length);
 
-  return rootItems;
+  return rows;
 };
+
 
 export const createFolder = async ({ parentId, name, userId }) => {
   const [newFolder] = await db(TABLE_NAME)

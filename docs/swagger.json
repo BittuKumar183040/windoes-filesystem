@@ -193,7 +193,7 @@
         }
       }
     },
-    "/filesystem/all": {
+    "/filesystem/overview": {
       "get": {
         "summary": "Get entire file system for a user",
         "tags": ["File System"],
