@@ -92,7 +92,7 @@
   "paths": {
     "/filesystem": {
       "get": {
-        "summary": "Get root folders (C:, D:)",
+        "summary": "Overview of file system",
         "tags": ["File System"],
         "parameters": [
           {
@@ -132,7 +132,7 @@
         }
       }
     },
-    "/filesystem/{parentId}": {
+    "/filesystem/folder/{parentId}": {
       "get": {
         "summary": "Get contents of a specific folder",
         "tags": ["File System"],
@@ -140,7 +140,7 @@
           {
             "name": "parentId",
             "in": "path",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "string"
             },
@@ -176,48 +176,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/filesystem/overview": {
-      "get": {
-        "summary": "Get entire file system for a user",
-        "tags": ["File System"],
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "User ID for authorization and ownership"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Full file system tree",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FileSystemItem"
-                  }
                 }
               }
             }

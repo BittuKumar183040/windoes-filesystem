@@ -13,12 +13,10 @@ export const getFullFileSystem = async (userId) => {
   if (!userId) {
     throw new Error("userId is required");
   }
-
   const rows = await db(TABLE_NAME).where({ userId, status: "ACTIVE" })
     .orderBy("type", "desc");
-
+    
   console.log("Fetched rows:", rows.length);
-
   return rows;
 };
 

@@ -16,7 +16,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/root", async (req, res, next) => {
+router.get("/folder", async (req, res, next) => {
   try {
     const userId = req.headers["userid"];
     const roots = await fileSystemRepo.getFileSystemRoots(userId);
@@ -31,15 +31,17 @@ router.get("/folder/:parentId", async (req, res, next) => {
     const { parentId } = req.params;
 
     const userId = req.headers["userid"];
-
-    const contents = await fileSystemRepo.getFolderContents(parentId, userId);
+    let contents = [];
+    if(!parentId) {
+      contents = await fileSystemRepo.getFileSystemRoots(parentId, userId);
+    }
+    contents = await fileSystemRepo.getFolderContents(parentId, userId);
 
     res.json(contents);
   } catch (err) {
     next(err);
   }
 });
-
 
 router.post("/folder", async (req, res, next) => {
   try {
@@ -78,13 +80,9 @@ router.post("/file", async (req, res, next) => {
 router.put("/:id/rename", async (req, res, next) => {
   try {
     const { id } = req.params;
-
     const { newName } = req.body;
-
     const userId = req.headers["userid"];
-
     errorCheckService.checkParameters({ newName, userId });
-
     const updatedItem = await fileSystemRepo.renameFileSystemItem(
       id,
       newName,
