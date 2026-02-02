@@ -33,8 +33,8 @@ echo "▶ Stopping old container (if exists)..."
 podman stop "$CONTAINER_NAME" 2>/dev/null || true
 podman rm "$CONTAINER_NAME" 2>/dev/null || true
 
-echo "▶ Running new container on port $PORT → 8081"
-podman run -d --name "$CONTAINER_NAME" --network windoes-net --restart=always --env-file "$ENV_FILE" -e ROOT_FOLDER=/data -v /data/windoes:/data:Z,U -p "${PORT}:8081" "$IMAGE_TAG"
+echo "▶ Running new container on port $PORT → 8082"
+podman run -d --name "$CONTAINER_NAME" --network windoes-net --restart=always --env-file "$ENV_FILE" -e ROOT_FOLDER=/data -v /data/windoes:/data:Z,U -p "${PORT}:8082" "$IMAGE_TAG"
 
 echo "▶ Cleaning old images..."
 podman image prune -f
