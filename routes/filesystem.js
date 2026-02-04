@@ -1,5 +1,5 @@
 import express from "express";
-import path from 'path';
+import path from "path";
 import * as fileSystemRepo from "../service/repo/filesystemRepo.js";
 import * as errorCheckService from "../service/errorCheckService.js";
 const router = express.Router();
@@ -33,7 +33,7 @@ router.get("/folder/:parentId", async (req, res, next) => {
 
     const userId = req.headers["userid"];
     let contents = [];
-    if(!parentId) {
+    if (!parentId) {
       contents = await fileSystemRepo.getFileSystemRoots(parentId, userId);
     }
     contents = await fileSystemRepo.getFolderContents(parentId, userId);
@@ -49,11 +49,33 @@ router.post("/folder", async (req, res, next) => {
     const { parentId, name } = req.body;
     const userId = req.headers["userid"];
     errorCheckService.checkParameters({ parentId, name, userId });
-    const newFolder = await fileSystemRepo.createFolder({
-      parentId,
-      name,
-      userId,
-    });
+
+    const MAX_RETRIES = 100;
+    let attempt = 0;
+    let finalName = name;
+    let newFolder;
+
+    while (attempt < MAX_RETRIES) {
+      try {
+        newFolder = await fileSystemRepo.createFolder({
+          parentId,
+          name: finalName,
+          userId,
+        });
+        break;
+      } catch (err) {
+        if (!isDuplicateFolderError(err)) {
+          throw err;
+        }
+        attempt += 1;
+        finalName = `${name} (${attempt})`;
+      }
+    }
+
+    if (!newFolder) {
+      throw new Error("Unable to create folder after multiple attempts");
+    }
+
     res.status(201).json(newFolder);
   } catch (err) {
     next(err);
@@ -115,13 +137,21 @@ router.get("/assets/icons", async (req, res, next) => {
     res.setHeader("Content-Type", "application/zip");
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="filesystem-icons.zip"'
+      'attachment; filename="filesystem-icons.zip"',
     );
-    res.setHeader( "Cache-Control", "public, max-age=31536000, immutable" );
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     res.sendFile(zipPath);
   } catch (err) {
     next(err);
   }
 });
+
+const isDuplicateFolderError = (err) => {
+  return (
+    err?.code === "23505" ||          // PostgreSQL unique violation
+    err?.code === "ER_DUP_ENTRY"      // MySQL duplicate entry
+  );
+};
+
 
 export default router;
