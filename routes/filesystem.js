@@ -19,8 +19,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/folder", async (req, res, next) => {
   try {
-    const userId = req.headers["userid"];
-    const roots = await fileSystemRepo.getFileSystemRoots(userId);
+    const roots = await fileSystemRepo.getFileSystemRoots();
     res.json(roots);
   } catch (err) {
     next(err);

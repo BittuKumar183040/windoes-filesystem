@@ -2,7 +2,7 @@ exports.up = function (knex) {
   return knex.schema
     .createTable('filesystem', (table) => {
       table.string('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-      table.string('userId').notNullable();
+      table.string('userId').notNullable().index();
 
       table.string('parentId').nullable();
 
@@ -21,8 +21,8 @@ exports.up = function (knex) {
     .then(() => {
       return knex('filesystem').insert([
         {
-          id: 'c1',
-          userId: 'admin',
+          id: 'c_drive',
+          userId: 'global',
           parentId: null,
           name: 'C:',
           type: 'FOLDER',
@@ -33,20 +33,8 @@ exports.up = function (knex) {
           updatedAt: Math.floor(Date.now() / 1000)
         },
         {
-          id: 'ca1',
-          userId: 'admin',
-          parentId: 'c1',
-          name: 'Program Files',
-          type: 'FOLDER',
-          size: 24428466176,
-          status: 'ACTIVE',
-          icon: "folder",
-          createdAt: Math.floor(Date.now() / 1000),
-          updatedAt: Math.floor(Date.now() / 1000)
-        },
-        {
-          id: 'd1',
-          userId: 'admin',
+          id: 'd_drive',
+          userId: 'global',
           parentId: null,
           name: 'D:',
           type: 'FOLDER',

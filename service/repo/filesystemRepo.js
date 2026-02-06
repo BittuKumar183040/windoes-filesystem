@@ -1,8 +1,10 @@
 import db from "../../utility/db/knex/knex.js";
 const TABLE_NAME = 'filesystem';
 
-export const getFileSystemRoots = async (userId) => {
-  return db(TABLE_NAME).where({userId, parentId: null}).select('*');
+export const getFileSystemRoots = async () => {
+  return db(TABLE_NAME)
+    .where({parentId: null})
+    .select('*');
 };
 
 export const getFolderContents = async (parentId, userId) => {
