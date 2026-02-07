@@ -8,7 +8,12 @@ export const getFileSystemRoots = async () => {
 };
 
 export const getFolderContents = async (parentId, userId) => {
-  return db(TABLE_NAME).where({ parentId, userId }).select('*');
+  return db(TABLE_NAME)
+    .where('parentId', parentId)
+    .andWhere(function () {
+      this.where('userId', userId).orWhere('userId', 'global');
+    })
+    .select('*');
 };
 
 export const getFullFileSystem = async (userId) => {
