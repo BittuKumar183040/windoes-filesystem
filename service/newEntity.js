@@ -9,7 +9,7 @@ export const createFile = async (parentId, name, userId, size) => {
     createFileRepo,
     (original, attempt) => ({ ...original, name: `${filename} (${attempt}).${extension}`})
   );
-  
+  return data;
 };
 
 export const createFolder = async (parentId, name, userId) => {
