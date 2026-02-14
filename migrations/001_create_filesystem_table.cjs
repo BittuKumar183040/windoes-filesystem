@@ -4,7 +4,7 @@ exports.up = function (knex) {
       table.string('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
       table.string('userId').notNullable().index();
 
-      table.string('parentId').nullable();
+      table.string('parentId').index().nullable();
 
       table.foreign('parentId').references('id').inTable('filesystem').onDelete('CASCADE');
 
@@ -15,8 +15,7 @@ exports.up = function (knex) {
       table.string('icon').notNullable().defaultTo("document-blank");
       table.integer('createdAt').notNullable().defaultTo(knex.raw("EXTRACT(EPOCH FROM NOW())::INTEGER"));
       table.integer('updatedAt').notNullable().defaultTo(knex.raw("EXTRACT(EPOCH FROM NOW())::INTEGER"));
-
-      table.unique(['parentId', 'name']);
+      table.unique(['userId', 'parentId', 'name']);
     })
     .then(() => {
   const now = Math.floor(Date.now() / 1000);

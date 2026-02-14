@@ -20,14 +20,47 @@ export const getFullFileSystem = async (userId) => {
   if (!userId) {
     throw new Error("userId is required");
   }
-  const rows = await db(TABLE_NAME).where({ userId, status: "ACTIVE" })
-    .orderBy("type", "desc");
+  const rows = await db(TABLE_NAME)
+    .where(function () {
+      this.where('userId', userId).orWhere('userId', 'global');
+    })
+    .andWhere('type', 'FOLDER')
+    .select('*');
 
   console.log("Fetched rows:", rows.length);
-  return rows;
+  const nodeMap = new Map();
+
+  rows.forEach(row => {
+    nodeMap.set(row.id, {
+      id: row.id, userId: row.userId,
+      parentId: row.parentId,
+      name: row.name, type: row.type,
+      size: row.size, icon: row.icon,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      children: []
+    });
+  });
+
+  const roots = [];
+  rows.forEach(row => {
+    const node = nodeMap.get(row.id);
+
+    if (row.parentId) {
+      const parent = nodeMap.get(row.parentId);
+      if (parent) {
+        parent.children.push(node);
+      } else {
+        roots.push(node);
+      }
+    } else {
+      roots.push(node);
+    }
+  });
+  return roots;
 };
 
-export const createFolder = async ({ parentId, name, userId }) => {
+export const createFolderRepo = async ({ parentId, name, userId }) => {
   const [newFolder] = await db(TABLE_NAME)
     .insert({
       parentId,
@@ -44,7 +77,7 @@ export const createFolder = async ({ parentId, name, userId }) => {
   return newFolder;
 };
 
-export const createFile = async ({ parentId, name, userId, size }) => {
+export const createFileRepo = async ({ parentId, name, userId, size }) => {
   const extension = name.includes('.') ? name.split('.').pop() : "";
   const [newFile] = await db(TABLE_NAME)
     .insert({

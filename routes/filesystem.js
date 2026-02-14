@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import * as fileSystemRepo from "../service/repo/filesystemRepo.js";
 import * as errorCheckService from "../service/errorCheckService.js";
+import { createFile, createFolder } from "../service/newEntity.js";
 const router = express.Router();
 
 router.get("/", async (req, res, next) => {
@@ -48,33 +49,7 @@ router.post("/folder", async (req, res, next) => {
     const { parentId, name } = req.body;
     const userId = req.headers["userid"];
     errorCheckService.checkParameters({ parentId, name, userId });
-
-    const MAX_RETRIES = 100;
-    let attempt = 0;
-    let finalName = name;
-    let newFolder;
-
-    while (attempt < MAX_RETRIES) {
-      try {
-        newFolder = await fileSystemRepo.createFolder({
-          parentId,
-          name: finalName,
-          userId,
-        });
-        break;
-      } catch (err) {
-        if (!isDuplicateFolderError(err)) {
-          throw err;
-        }
-        attempt += 1;
-        finalName = `${name} (${attempt})`;
-      }
-    }
-
-    if (!newFolder) {
-      throw new Error("Unable to create folder after multiple attempts");
-    }
-
+    const newFolder = await createFolder(parentId, name, userId);
     res.status(201).json(newFolder);
   } catch (err) {
     next(err);
@@ -86,13 +61,8 @@ router.post("/file", async (req, res, next) => {
     const { parentId, name, size } = req.body;
     const userId = req.headers["userid"];
     errorCheckService.checkParameters({ parentId, name, userId, size });
-    const newFile = await fileSystemRepo.createFile({
-      parentId,
-      name,
-      userId,
-      size,
-    });
-
+    
+    const newFile = await createFile(parentId, name, userId, size )
     res.status(201).json(newFile);
   } catch (err) {
     next(err);
@@ -144,13 +114,5 @@ router.get("/assets/icons", async (req, res, next) => {
     next(err);
   }
 });
-
-const isDuplicateFolderError = (err) => {
-  return (
-    err?.code === "23505" ||          // PostgreSQL unique violation
-    err?.code === "ER_DUP_ENTRY"      // MySQL duplicate entry
-  );
-};
-
 
 export default router;
