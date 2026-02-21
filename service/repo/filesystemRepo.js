@@ -1,14 +1,15 @@
 import db from "../../utility/db/knex/knex.js";
-const TABLE_NAME = 'filesystem';
+const FILESYSTEM = 'filesystem';
+const FILEDETAILS = 'filedetails';
 
 export const getFileSystemRoots = async () => {
-  return db(TABLE_NAME)
+  return db(FILESYSTEM)
     .where({parentId: null})
     .select('*');
 };
 
 export const getFolderContents = async (parentId, userId) => {
-  return db(TABLE_NAME)
+  return db(FILESYSTEM)
     .where('parentId', parentId)
     .andWhere(function () {
       this.where('userId', userId).orWhere('userId', 'global');
@@ -20,7 +21,7 @@ export const getFullFileSystem = async (userId) => {
   if (!userId) {
     throw new Error("userId is required");
   }
-  const rows = await db(TABLE_NAME)
+  const rows = await db(FILESYSTEM)
     .where(function () {
       this.where('userId', userId).orWhere('userId', 'global');
     })
@@ -35,7 +36,7 @@ export const getFullFileSystem = async (userId) => {
       id: row.id, userId: row.userId,
       parentId: row.parentId,
       name: row.name, type: row.type,
-      size: row.size, icon: row.icon,
+      icon: row.icon,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       children: []
@@ -61,13 +62,12 @@ export const getFullFileSystem = async (userId) => {
 };
 
 export const createFolderRepo = async ({ parentId, name, userId }) => {
-  const [newFolder] = await db(TABLE_NAME)
+  const [newFolder] = await db(FILESYSTEM)
     .insert({
       parentId,
       name,
       userId,
       type: 'FOLDER',
-      size: null,
       status: 'ACTIVE',
       icon: "folder",
       createdAt: Math.floor(Date.now() / 1000),
@@ -79,24 +79,31 @@ export const createFolderRepo = async ({ parentId, name, userId }) => {
 
 export const createFileRepo = async ({ parentId, name, userId, size }) => {
   const extension = name.includes('.') ? name.split('.').pop() : "";
-  const [newFile] = await db(TABLE_NAME)
+  const [newFile] = await db(FILESYSTEM)
     .insert({
       parentId,
       name,
       userId,
       type: 'FILE',
-      size,
       status: 'ACTIVE',
       icon: extension,
       createdAt: Math.floor(Date.now() / 1000),
       updatedAt: Math.floor(Date.now() / 1000),
     })
     .returning('*');
+    await db(FILEDETAILS)
+      .insert({
+        id: newFile.id,
+        size: 0,
+        status: 'ACTIVE',
+        createdAt: Math.floor(Date.now() / 1000),
+        updatedAt: Math.floor(Date.now() / 1000),
+      })
   return newFile;
 };
 
 export const renameFileSystemItem = async (id, newName, userId) => {
-  const [updatedItem] = await db(TABLE_NAME)
+  const [updatedItem] = await db(FILESYSTEM)
     .where({ id, userId })
     .update({ name: newName, updatedAt: Math.floor(Date.now() / 1000) })
     .returning('*');
@@ -104,7 +111,7 @@ export const renameFileSystemItem = async (id, newName, userId) => {
 };
 
 export const deleteFileSystemItem = async (id, userId) => {
-  return db(TABLE_NAME).where({ id, userId }).del();
+  return db(FILESYSTEM).where({ id, userId }).del();
 };
 
 export const insertRecord = async ({ userId, fileTag, filename }) => {
