@@ -1,5 +1,5 @@
 import logger from "#logger";
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import { getUserFilesDetails } from "./repo/filesystemRepo.js";
 
@@ -10,22 +10,19 @@ export const uploadFile = async ({ id, userId, file }) => {
 
   const dirPath = path.join(ROOT_FOLDER, "storage", userId);
 
-  if (!fs.existsSync(dirPath)) {
-    logger.trace(`Folder not found: creating ${dirPath}`);
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-
+  await fs.mkdir(dirPath, { recursive: true });
   const filePath = path.join(dirPath, `${id}`);
 
   if (file?.data) {
-    fs.writeFileSync(filePath, file.data);
+    await fs.writeFile(filePath, file.data);
     logger.trace(`Uploaded file saved at: ${filePath}`);
   } else {
-    fs.writeFileSync(filePath, "");
+    await fs.writeFile(filePath, "");
     logger.trace(`Empty file created at: ${filePath}`);
   }
+  const stats = await fs.stat(filePath);
   logger.info(`Successfully file uploaded at loc: ${filePath}`)
-  return filePath;
+  return stats;
 };
 
 export const getFile = async ({ id, userId }) => {

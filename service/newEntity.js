@@ -1,14 +1,18 @@
 import { createFileRepo, createFolderRepo } from "./repo/filesystemRepo.js";
+import { uploadFile } from './fileLocService.js'
+import logger from "#logger";
 
 const MAX_RETRIES = 1000;
 
 export const createFile = async (parentId, name, userId, size) => {
   const {filename, extension} = parseFileName(name);
-  const data = createWithRetry(
+  const data = await createWithRetry(
     { parentId, name, userId, size },
     createFileRepo,
     (original, attempt) => ({ ...original, name: `${filename} (${attempt}).${extension}`})
   );
+  logger.info(`${data.userId}: New data added into database with id ${data.id}, name: ${data.name} `)
+  await uploadFile({id: data.id, userId})
   return data;
 };
 

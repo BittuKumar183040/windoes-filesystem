@@ -9,6 +9,7 @@ exports.up = function (knex) {
       table.foreign('parentId').references('id').inTable('filesystem').onDelete('CASCADE');
 
       table.string('name', 255)
+      table.bigInteger('size').defaultTo(0)
       table.enu('type', ['FILE', 'FOLDER']).notNullable();
       table.string('status', 50).notNullable().defaultTo('ACTIVE');
       table.string('icon').notNullable().defaultTo("document-blank");

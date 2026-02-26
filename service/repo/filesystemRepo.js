@@ -1,7 +1,7 @@
+import { getFileExtension } from "../../helper/extensionHelper.js";
 import db from "../../utility/db/knex/knex.js";
-import { uploadFile } from "../fileLocService.js";
+
 const FILESYSTEM = 'filesystem';
-const FILEDETAILS = 'filedetails';
 
 export const getFileSystemRoots = async () => {
   return db(FILESYSTEM)
@@ -79,13 +79,14 @@ export const createFolderRepo = async ({ parentId, name, userId }) => {
   return newFolder;
 };
 
-export const createFileRepo = async ({ parentId, name, userId, size }) => {
-  const extension = name.includes('.') ? name.split('.').pop() : "";
+export const createFileRepo = async ({ parentId, name, userId }) => {
+  const extension = getFileExtension(name)
   const [newFile] = await db(FILESYSTEM)
     .insert({
       userId,
       parentId,
       name,
+      size: 0,
       type: 'FILE',
       status: 'ACTIVE',
       icon: extension,
@@ -93,7 +94,6 @@ export const createFileRepo = async ({ parentId, name, userId, size }) => {
       updatedAt: Math.floor(Date.now() / 1000),
     })
     .returning('*');
-    uploadFile({id:newFile.id, userId})
   return newFile;
 };
 
