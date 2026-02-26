@@ -1,4 +1,3 @@
-import { getFileExtension } from "../../helper/extensionHelper.js";
 import db from "../../utility/db/knex/knex.js";
 import { uploadFile } from "../fileLocService.js";
 const FILESYSTEM = 'filesystem';
@@ -94,7 +93,7 @@ export const createFileRepo = async ({ parentId, name, userId, size }) => {
       updatedAt: Math.floor(Date.now() / 1000),
     })
     .returning('*');
-    uploadFile({id:newFile.id, userId, extension: getFileExtension(name)})
+    uploadFile({id:newFile.id, userId})
   return newFile;
 };
 
