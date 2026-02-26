@@ -1,58 +1,46 @@
 import logger from "#logger";
 import fs from "fs";
 import path from "path";
-import { getUserById } from "./repo/userRepo.js";
-import { updateUserFileStatus, insertFileRecord, getUserFilesDetails, getFilebyFileAndUserId } from "./repo/fileRepo.js";
+import { getUserFilesDetails } from "./repo/filesystemRepo.js";
 
-export const uploadFile = async ({ id, fileTag, file }) => {
-  const rootFolder = process.env.ROOT_FOLDER || "/data";
-  const uploadDir = path.join(rootFolder, id, fileTag);
+const ROOT_FOLDER = process.env.ROOT_FOLDER || "/data";
 
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-  const filename = file.originalname;
-  const filePath = path.join(uploadDir, filename);
-  const user = await getUserById(id);
-  if (!user) {
-    throw { status: 404, error:`User: ${id} not found`};
+export const uploadFile = async ({ id, userId, file }) => {
+  logger.info( `Initialed file upload for id/filename: ${id}, userId: ${userId}`);
+
+  const dirPath = path.join(ROOT_FOLDER, "storage", userId);
+
+  if (!fs.existsSync(dirPath)) {
+    logger.trace(`Folder not found: creating ${dirPath}`);
+    fs.mkdirSync(dirPath, { recursive: true });
   }
 
-  fs.writeFileSync(filePath, file.buffer);
-  const resetStatusCount = await updateUserFileStatus({ userId: id, fileTag: fileTag, status: "INACTIVE" })
-  logger.info(`Reset already exists images count: ${resetStatusCount} back to inactive for user:${id}`)
+  const filePath = path.join(dirPath, `${id}`);
 
-  const fileRecord = await insertFileRecord({ userId: id, fileTag: fileTag, filename });
-  logger.info(`File uploaded successfully for User Id ${id}, File Tag:${fileTag}, filePath:${filePath}, filename:${filename} `);
-  return fileRecord;
+  if (file?.data) {
+    fs.writeFileSync(filePath, file.data);
+    logger.trace(`Uploaded file saved at: ${filePath}`);
+  } else {
+    fs.writeFileSync(filePath, "");
+    logger.trace(`Empty file created at: ${filePath}`);
+  }
+  logger.info(`Successfully file uploaded at loc: ${filePath}`)
+  return filePath;
 };
 
-export const getFile = async ({ id, fileTag, statuses }) => {
-  let fileRecord = await getUserFilesDetails({userId: id, fileTag: fileTag, status: statuses})
+export const getFile = async ({ id, userId }) => {
+  let fileRecord = await getUserFilesDetails({id, userId})
 
   if (!fileRecord || !fileRecord.length) {
-    throw { status: 404, error:`No File found for user ${id}, tag ${fileTag} and status ${[...statuses]}`}
+    throw { status: 404, error:`No File found for user ${id}`}
   }
   return getFileByEntity(fileRecord[0])
 };
 
-export const getFileById = async ({ fileId, userId }) => {
-
-  logger.info(`Looking for File Id: ${fileId} for User Id: ${userId}`)
-  let fileRecord = await getFilebyFileAndUserId({fileId, userId})
-  
-  if (!fileRecord) {
-    throw { status: 404, error: `No File found for user: ${userId} and File: ${fileId} ` }
-  }
-
-  return getFileByEntity(fileRecord)
-};
-
 const getFileByEntity = async (fileRecord) => {
 
-  const rootFolder = process.env.ROOT_FOLDER || "/data";
-  logger.info(`Getting file from - Root:${rootFolder}, ${JSON.stringify(fileRecord)}`)
-  const location = path.join(rootFolder, fileRecord.userId, fileRecord.fileTag, fileRecord.filename);
+  logger.info(`Getting file from - Root:${ROOT_FOLDER}, ${JSON.stringify(fileRecord)}`)
+  const location = path.join(ROOT_FOLDER, "storage", fileRecord.userId, );
 
   logger.info(`Looking into Location: ${location}`)
   

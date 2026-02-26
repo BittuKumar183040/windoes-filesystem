@@ -1,11 +1,14 @@
+import { getFileExtension } from "../../helper/extensionHelper.js";
 import db from "../../utility/db/knex/knex.js";
+import { uploadFile } from "../fileLocService.js";
 const FILESYSTEM = 'filesystem';
 const FILEDETAILS = 'filedetails';
 
 export const getFileSystemRoots = async () => {
   return db(FILESYSTEM)
     .where({parentId: null})
-    .select('*');
+    .select('*', db.raw(`(SELECT FLOOR(random() * 500000000000))::bigint as "size"`)
+  );
 };
 
 export const getFolderContents = async (parentId, userId) => {
@@ -81,9 +84,9 @@ export const createFileRepo = async ({ parentId, name, userId, size }) => {
   const extension = name.includes('.') ? name.split('.').pop() : "";
   const [newFile] = await db(FILESYSTEM)
     .insert({
+      userId,
       parentId,
       name,
-      userId,
       type: 'FILE',
       status: 'ACTIVE',
       icon: extension,
@@ -91,14 +94,7 @@ export const createFileRepo = async ({ parentId, name, userId, size }) => {
       updatedAt: Math.floor(Date.now() / 1000),
     })
     .returning('*');
-    await db(FILEDETAILS)
-      .insert({
-        id: newFile.id,
-        size: 0,
-        status: 'ACTIVE',
-        createdAt: Math.floor(Date.now() / 1000),
-        updatedAt: Math.floor(Date.now() / 1000),
-      })
+    uploadFile({id:newFile.id, userId, extension: getFileExtension(name)})
   return newFile;
 };
 
@@ -128,12 +124,11 @@ export const updateUserFileStatus = async ({ userId, fileTag, status }) => {
   return updatedCount;
 };
 
-export const getUserFilesDetails = async ({ userId, fileTag, status }) => {
+export const getUserFilesDetails = async ({ id, userId}) => {
   return db("filesystem")
-    .where({ userId, fileTag })
-    .whereIn("status", status)
-    .orderBy("updatedAt", "desc")
-    .select("*");
+    .where({ id, userId })
+    .select("*")
+    .first();
 };
 
 export const getFilebyFileAndUserId = async ({fileId, userId}) => {
