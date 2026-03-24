@@ -2,7 +2,8 @@ import express from "express";
 import path from "path";
 import * as fileSystemRepo from "../service/repo/filesystemRepo.js";
 import * as errorCheckService from "../service/errorCheckService.js";
-import { createFile, createFolder } from "../service/newEntity.js";
+import { createFile, createFolder, downloadUserFile } from "../service/newEntity.js";
+import logger from "#logger";
 const router = express.Router();
 
 router.get("/", async (req, res, next) => {
@@ -64,6 +65,24 @@ router.post("/file", async (req, res, next) => {
     
     const newFile = await createFile(parentId, name, userId, size )
     res.status(201).json(newFile);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/file/:id/download", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.headers["userid"];
+    errorCheckService.checkParameters({ id, userId });
+    logger.info(`Initiated downloading file for userId: ${userId} and id: ${id}`)
+    const file = await downloadUserFile(id, userId)
+    res.setHeader("Content-Type", file.mimetype);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${file.filename}"`
+    );
+    return res.send(file.buffer);
   } catch (err) {
     next(err);
   }

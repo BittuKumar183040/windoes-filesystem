@@ -6,7 +6,7 @@ import { getUserFilesDetails } from "./repo/filesystemRepo.js";
 const ROOT_FOLDER = process.env.ROOT_FOLDER || "/data";
 
 export const uploadFile = async ({ id, userId, file }) => {
-  logger.info( `Initialed file upload for id/filename: ${id}, userId: ${userId}`);
+  logger.info(`Initialed file upload for id/filename: ${id}, userId: ${userId}`);
 
   const dirPath = path.join(ROOT_FOLDER, "storage", userId);
 
@@ -26,35 +26,48 @@ export const uploadFile = async ({ id, userId, file }) => {
 };
 
 export const getFile = async ({ id, userId }) => {
-  let fileRecord = await getUserFilesDetails({id, userId})
+  logger.info(`Reterived file inforamtion file for userId: ${userId} and id: ${id}`)
+  let fileRecord = await getUserFilesDetails({ id, userId })
+  logger.info(`File infomation: ${JSON.stringify(fileRecord)} file inforamtion file for userId: ${userId} and id: ${id}`)
 
-  if (!fileRecord || !fileRecord.length) {
-    throw { status: 404, error:`No File found for user ${id}`}
+  if (!fileRecord || !fileRecord) {
+    throw { status: 404, error: `No File found for user ${id}` }
   }
-  return getFileByEntity(fileRecord[0])
+  return await getFileByEntity(fileRecord)
 };
 
 const getFileByEntity = async (fileRecord) => {
 
-  logger.info(`Getting file from - Root:${ROOT_FOLDER}, ${JSON.stringify(fileRecord)}`)
-  const location = path.join(ROOT_FOLDER, "storage", fileRecord.userId, );
+  logger.info(`Getting file from - Root:${ROOT_FOLDER}/storage, ${JSON.stringify(fileRecord)}`);
+  const location = path.join( ROOT_FOLDER, "storage", fileRecord.userId, fileRecord.id );
 
-  logger.info(`Looking into Location: ${location}`)
-  
-  if (!fs.existsSync(location)) {
-    throw { status: 404, error: `File not found on disk at ${location}`};
+  logger.info(`Looking into Location: ${location}`);
+
+  try {
+    await fs.access(location);
+  } catch {
+    throw { status: 404, error: `File not found on disk at ${location}` };
   }
 
-  const buffer = fs.readFileSync(location);
+  const buffer = await fs.readFile(location);
 
-  const ext = path.extname(fileRecord.filename).toLowerCase();
+  const ext = path.extname(fileRecord.name).toLowerCase();
   const mimeMap = {
     ".png": "image/png",
     ".jpg": "image/jpeg",
     ".jpeg": "image/jpeg",
-    ".webp": "image/webp"
+    ".webp": "image/webp",
+    ".txt": "text/plain"
   };
 
   const mimetype = mimeMap[ext] || "application/octet-stream";
-  return { buffer, filename: fileRecord.filename, mimetype, location };
-}
+
+  logger.info(`Retrieved File from ${location}`);
+
+  return {
+    buffer,
+    filename: fileRecord.name,
+    mimetype,
+    location
+  };
+};
