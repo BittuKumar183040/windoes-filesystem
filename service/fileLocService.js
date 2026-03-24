@@ -46,7 +46,14 @@ const getFileByEntity = async (fileRecord) => {
   try {
     await fs.access(location);
   } catch {
-    throw { status: 404, error: `File not found on disk at ${location}` };
+    logger.warn(`File not found at ${location}, returning empty file`);
+    return {
+      buffer: Buffer.from(""),
+      filename: fileRecord.name,
+      mimetype: "text/plain",
+      location,
+      isMissing: true
+    };
   }
 
   const buffer = await fs.readFile(location);

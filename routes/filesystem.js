@@ -82,7 +82,8 @@ router.get("/file/:id/download", async (req, res, next) => {
       "Content-Disposition",
       `attachment; filename="${file.filename}"`
     );
-    return res.send(file.buffer);
+    const statusCode = file.isMissing ? 204 : 200;
+    return res.status(statusCode).send(file.buffer);
   } catch (err) {
     next(err);
   }
